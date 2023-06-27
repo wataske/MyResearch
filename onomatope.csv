@@ -1,0 +1,265 @@
+﻿num,phoneme,word
+1,a q s a r i,あっさり
+2,i g a i g a,いがいが
+3,i j i: j i,いじいじ
+4,i ch a i ch a,いちゃいちゃ
+5,i r a i r a,いらいら
+6,u k i:,うきー
+7,u k i u k i,うきうき
+8,u j a u j a,うじゃうじゃ
+9,u q k a r i,うっかり
+10,u t o: t o,うとうと
+11,u r u: r u,うるうる
+12,u r o: r o,うろうろ
+13,e: N,えーん
+14,o gy a: o gy a:,おぎゃーおぎゃー
+15,o d o: d o,おどおど
+16,k a: k a:,かーかー
+17,g a: g a:,がーがー
+18,g a o:,がおー
+19,k a sh a,かしゃ
+20,k a t a k a t a,かたかた
+21,g a t a g a t a,がたがた
+22,g a ts u g a ts u,がつがつ
+23,g a q k a r i,がっかり
+24,g a m i g a m i,がみがみ
+25,g a y a g a y a,がやがや
+26,k a r a k a r a,からから
+27,g a r a g a r a,がらがら
+28,k a r i k a r i,かりかり
+29,g a r i g a r i,がりがり
+30,k a N k a N,かんかん
+31,g a N g a N,がんがん
+32,k i: k i:,きーきー
+33,g i k o g i k o,ぎこぎこ
+34,g i z a g i z a,ぎざぎざ
+35,g i s u g i s u,ぎすぎす
+36,k i ts u k i ts u,きつきつ
+37,g i q sh i r i,ぎっしり
+38,g i t o g i t o,ぎとぎと
+39,gy u: gy u:,ぎゅうぎゅう
+40,ky o r o ky o r o,きょろきょろ
+41,gy o r o gy o r o,ぎょろぎょろ
+42,k i r a k i r a,きらきら
+43,k i r i k i r i,きりきり
+44,g i r i g i r i,ぎりぎり
+45,k i N k i N,きんきん
+46,k i N k o N k a N k o N,きんこんかんこん
+47,g u i g u i,ぐいぐい
+48,g u: g u:,ぐうぐう
+49,g u k i q,ぐきっ
+50,k u s u k u s u,くすくす
+51,k u t a k u t a,くたくた
+52,k u ch a k u ch a,くちゃくちゃ
+53,g u ch a g u ch a,ぐちゃぐちゃ
+54,g u ts u g u ts u,ぐつぐつ
+55,g u q s u r i,ぐっすり
+56,g u q t a r i,ぐったり
+57,k u d o k u d o,くどくど
+58,k u n e k u n e,くねくね
+59,g u b i g u b i,ぐびぐび
+60,k u r a k u r a,くらくら
+61,g u r a g u r a,ぐらぐら
+62,k u r u k u r u,くるくる
+63,g u r u g u r u,ぐるぐる
+64,k u N k u N,くんくん
+65,g u N g u N,ぐんぐん
+66,g e q s o r i,げっそり
+67,g e r a g e r a,げらげら
+68,k e r o k e r o,けろけろ
+69,g o k u g o k u,ごくごく
+70,k o k e k o q k o:,こけこっこー
+71,k o s o k o s o,こそこそ
+72,g o sh i g o sh i,ごしごし
+73,g o ch a g o ch a,ごちゃごちゃ
+74,k o ts u k o ts u,こつこつ
+75,g o ts u g o ts u,ごつごつ
+76,g o q s o r i,ごっそり
+77,k o q t e r i,こってり
+78,g o ts u N,ごつん
+79,k o t o k o t o,ことこと
+80,k o n a g o n a,こなごな
+81,g o h o g o h o,ごほごほ
+82,k o r o k o r o,ころころ
+83,g o r o g o r o,ごろごろ
+84,k o N k o N,こんこん
+85,z a: z a:,ざーざー
+86,s a q p a r i,さっぱり
+87,s a r a s a r a,さらさら
+88,z a r a z a r a,ざらざら
+89,sh i t o sh i t o,しとしと
+90,j i m e j i m e,じめじめ
+91,j a b u j a b u,じゃぶじゃぶ
+92,sh a k a sh a k a,しゃかしゃか
+93,sh a k i sh a k i,しゃきしゃき
+94,sh u:,しゅー
+95,j u: j u:,じゅーじゅー
+96,sh u w a sh u w a,しゅわしゅわ
+97,j o r i j o r i,じょりじょり
+98,j i r i j i r i,じりじり
+99,j i r o j i r o,じろじろ
+100,sh i w a sh i w a,しわしわ
+101,j i N j i N,じんじん
+102,s u k a s u k a,すかすか
+103,z u k i z u k i,ずきずき
+104,s u k u s u k u,すくすく
+105,s u t a s u t a,すたすた
+106,s u q k i r i,すっきり
+107,z u b u z u b u,ずぶずぶ
+108,s u b e s u b e,すべすべ
+109,s u y a s u y a,すやすや
+110,s u r a s u r a,すらすら
+111,s u r i s u r i,すりすり
+112,z u r u z u r u,ずるずる
+113,z o k u z o k u,ぞくぞく
+114,s o q k u r i,そっくり
+115,s o q t o,そっと
+116,s o y o s o y o,そよそよ
+117,s o w a s o w a,そわそわ
+118,t a q p u r i,たっぷり
+119,d a b o d a b o,だぼだぼ
+120,d a r a d a r a,だらだら
+121,ch i k u ch i k u,ちくちく
+122,ch a r a ch a r a,ちゃらちゃら
+123,ch u: ch u:,ちゅーちゅー
+124,ch u N ch u N,ちゅんちゅん
+125,ch o k i ch o k i,ちょきちょき
+126,ch o r o ch o r o,ちょろちょろ
+127,ch i r a q t o,ちらっと
+128,ts u: N,つーん
+129,ts u y a ts u y a,つやつや
+130,ts u r u ts u r u,つるつる
+131,t e k i p a k i,てきぱき
+132,t e k u t e k u,てくてく
+133,d e k o b o k o,でこぼこ
+134,d e r e d e r e,でれでれ
+135,d o k a: N,どかーん
+136,d o k i d o k i,どきどき
+137,t o g e t o g e,とげとげ
+138,d o b a d o b a,どばどば
+139,t o r o t o r o,とろとろ
+140,d o r o d o r o,どろどろ
+141,t o N t o N,とんとん
+142,d o N d o N,どんどん
+143,d o N y o r i,どんより
+144,n a m i n a m i,なみなみ
+145,n i k o n i k o,にこにこ
+146,ny a:,にゃー
+147,n i y a n i y a,にやにや
+148,ny o k i ny o k i,にょきにょき
+149,ny o r o ny o r o,にょろにょろ
+150,n u m e n u m e,ぬめぬめ
+151,n u r u n u r u,ぬるぬる
+152,n e ch i n e ch i,ねちねち
+153,n e b a n e b a,ねばねば
+154,n o r o n o r o,のろのろ
+155,h a: h a:,はぁはぁ
+156,p a o: N,ぱおーん
+157,h a k i h a k i,はきはき
+158,b a k i b a k i,ばきばき
+159,b a k u b a k u,ばくばく
+160,b a sh a b a sh a,ばしゃばしゃ
+161,b a t a b a t a,ばたばた
+162,p a t a p a t a,ぱたぱた
+163,b a ch i b a ch i,ばちばち
+164,p a ch i p a ch i,ぱちぱち
+165,b a q t a r i,ばったり
+166,b a q ch i r i,ばっちり
+167,h a r a h a r a,はらはら
+168,b a r a b a r a,ばらばら
+169,p a r a p a r a,ぱらぱら
+170,p a N p a N,ぱんぱん
+171,p i: p o: p i: p o:,ぴーぽーぴーぽー
+172,p i e N,ぴえん
+173,p i k a p i k a,ぴかぴか
+174,b i k u q,びくっ
+175,b i k u b i k u,びくびく
+176,p i k u p i k u,ぴくぴく
+177,b i sh o b i sh o,びしょびしょ
+178,h i s o h i s o,ひそひそ
+179,p i ch i p i ch i,ぴちぴち
+180,p i q t a r i,ぴったり
+181,h i h i: N,ひひーん
+182,p i y o p i y o,ぴよぴよ
+183,by u: by u:,びゅうびゅう
+184,hy o r o hy o r o,ひょろひょろ
+185,py o N py o N,ぴょんぴょん
+186,h i r a h i r a,ひらひら
+187,p i r i q,ぴりっ
+188,h i r i h i r i,ひりひり
+189,b i r i b i r i,びりびり
+190,p i N p i N,ぴんぴん
+191,p i N p o N,ぴんぽん
+192,h i N y a r i,ひんやり
+193,f u: f u:,ふーふー
+194,b u: b u:,ぶーぶー
+195,f u k a f u k a,ふかふか
+196,b u k a b u k a,ぶかぶか
+197,p u k a p u k a,ぷかぷか
+198,b u k u b u k u,ぶくぶく
+199,f u s a f u s a,ふさふさ
+200,p u sh u q,ぷしゅっ
+201,f u q k u r a,ふっくら
+202,b u ts u b u ts u,ぶつぶつ
+203,f u r a f u r a,ふらふら
+204,b u r a b u r a,ぶらぶら
+205,p u r i p u r i,ぷりぷり
+206,b u r u b u r u,ぶるぶる
+207,f u w a f u w a,ふわふわ
+208,p u N p u N,ぷんぷん
+209,b u N b u N,ぶんぶん
+210,p e k o p e k o,ぺこぺこ
+211,p e k o r i,ぺこり
+212,b e t a b e t a,べたべた
+213,p e ch a N k o,ぺちゃんこ
+214,h e t o h e t o,へとへと
+215,h e n a h e n a,へなへな
+216,p e r a p e r a,ぺらぺら
+217,b e r o b e r o,べろべろ
+218,p e r o p e r o,ぺろぺろ
+219,p o i q,ぽいっ
+220,b o: q t o,ぼうっと
+221,h o: h o:,ほーほー
+222,b o: b o:,ぼーぼー
+223,h o: h o k e ky o,ほーほけきょ
+224,p o k a p o k a,ぽかぽか
+225,p o k a N,ぽかん
+226,h o k u h o k u,ほくほく
+227,b o k o b o k o,ぼこぼこ
+228,b o s a b o s a,ぼさぼさ
+229,p o t a p o t a,ぽたぽた
+230,p o ch a N,ぽちゃん
+231,p o ts u p o ts u,ぽつぽつ
+232,b o r i b o r i,ぼりぼり
+233,b o r o b o r o,ぼろぼろ
+234,m a j i m a j i,まじまじ
+235,m a r u m a r u,まるまる
+236,m u k a m u k a,むかむか
+237,m u k i m u k i,むきむき
+238,m u sh i m u sh i,むしむし
+239,m u z u m u z u,むずむず
+240,m u sh a m u sh a,むしゃむしゃ
+241,m u ch i m u ch i,むちむち
+242,m u r a m u r a,むらむら
+243,m e::,めぇー
+244,m e r a m e r a,めらめら
+245,m e r o m e r o,めろめろ
+246,m o:,もー
+247,m o j a m o j a,もじゃもじゃ
+248,m o k u m o k u,もくもく
+249,m o g u m o g u,もぐもぐ
+250,m o j i m o j i,もじもじ
+251,m o k o m o k o,もこもこ
+252,m o t a m o t a,もたもた
+253,m o ch i m o ch i,もちもち
+254,m o t e m o t e,もてもて
+255,m o m i m o m i,もみもみ
+256,m o r i m o r i,もりもり
+257,y u r a y u r a,ゆらゆら
+258,y o b o y o b o,よぼよぼ
+259,y o r e y o r e,よれよれ
+260,y o r o y o r o,よろよろ
+261,r i N r i N,りんりん
+262,r u N r u N,るんるん
+263,w a i w a i,わいわい
+264,w a k u w a k u,わくわく
