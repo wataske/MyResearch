@@ -26,7 +26,7 @@ EOS_token = 1
 device = "cuda" # torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Lang:
-    def __init__( self, filename ): #呼び出されたとき、最初に行うこと
+    def __init__( self, filename ,augmentation=False): #呼び出されたとき、最初に行うこと
         max_length    = 20
         self.filename = filename
         self.ono=[]    
@@ -35,6 +35,7 @@ class Lang:
         self.sentences = []
         self.index2word = { 0: "SOS", 1: "EOS" }
         self.n_words = 2  # Count SOS and EOS
+        self.augmentation=augmentation
         df = pd.read_csv(filename)
         num=df.shape[0] #csvファイルの行数を取得（データセットの数）
         
@@ -110,10 +111,28 @@ class Lang:
         ono=self.ono[index] #取ってきたラベル番号のオノマトペを取ってくる（オノマトペのラベル番号とリストの番号は一致している）
         phoneme = self.sentences[index] #同上
 
+        if self.augmentation: #データセットの引数においてTrueが渡されていればaugmentationを実行する
+        #25％の確率でランダムに生成されたオノマトペに代わる
+            if random.random()<0.25:
+                rand_num=torch.randint(low=2,high=self.n_words,size=(2,))
+                rand_ono=rand_num.repeat(2)
+                if random.random()<0.5: #50％の確率で３文字が連なったオノマトペを生成
+                    rand_num=torch.randint(low=2,high=self.n_words,size=(3,))
+                    rand_ono=rand_num.repeat(2)
+                word=[]
+                for di in range(len(rand_ono)): #ラベルを対応する音素に変換
+                    word.append(self.index2word[rand_ono[di].item()])
+                word=[x+' 'for x in word] #1音素ずつに半角の空白を追加
+                word[-1]=word[-1].strip() #最後の音素の後ろの空白だけ消す
+                word=''.join(word) #リストになってたものを１つの単語にする
+                
+
+                ono=word
+                phoneme=word
+
         return ono, phoneme
 
 
-mm = preprocessing.MinMaxScaler()
 # Start core part
 class Encoder( nn.Module ):
     def __init__( self, input_size, embedding_size, hidden_size ):
@@ -123,7 +142,6 @@ class Encoder( nn.Module ):
         self.embedding   = nn.Embedding( input_size, embedding_size )
         # GRUに依る実装. 
         self.gru         = nn.GRU( embedding_size, hidden_size )
-        self.sigmoid=nn.Sigmoid()
 
     def initHidden( self ):
         return torch.zeros( 1, 1, self.hidden_size ).to( device )
@@ -132,7 +150,6 @@ class Encoder( nn.Module ):
         # 単語のベクトル化
         embedded        = self.embedding( _input ).view( 1, 1, -1 )
         out, new_hidden = self.gru( embedded, hidden )
-        # new_hidden=self.sigmoid(new_hidden)
         return out, new_hidden
 
 class Decoder( nn.Module ):
@@ -186,16 +203,17 @@ def Train(encoder,decoder,lang,dataloader):
     for batch_num,(ono,phoneme) in tqdm.tqdm(enumerate(dataloader),total=len(dataloader)):
         batch_ono_loss=0 #1バッチ分のLossをここに入れていく
         batch_total_loss=0
-        for data_num in range(dataloader.batch_size): 
+        for data_num in range(dataloader.batch_size):
+   
             ono2_tensor=tensorFromSentence(lang,phoneme[data_num]).to(device) #一つ一つの音素をインデックス番号に変換する
+
             encoder_hidden              = encoder.initHidden()
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
             input_length  = ono2_tensor.size(0)
+    
             for i in range( input_length ): #input_length（単語の長さ）の回数分繰り返す、つまりencoder_hiddenが一音素ごとに更新されていく。これが終わったencode_hiddenは一単語を網羅して考慮された特徴ベクトルとなる
                 encoder_output, encoder_hidden = encoder( ono2_tensor[ i ], encoder_hidden ) #i番目のデータをエンコーダに投げる、このデータのラベルさえわかれば・・・！！  
-
-
             # Decoder phese
             loss_ono = 0 #seq2seqのloss
             decoder_input  = torch.tensor( [ [ SOS_token ] ] ).to( device )
@@ -210,7 +228,7 @@ def Train(encoder,decoder,lang,dataloader):
                 loss_ono += criterion( decoder_output, ono2_tensor[ i ] ) #入力となる音素とデコーダのアウトプットから得られる音素の確率密度を計算
                 topv, topi = decoder_output.data.topk(1)
 
-                if decoder_input.item() == EOS_token: break #decoder_inputの中がEOSだったらここで終了
+                if topi.item() == EOS_token: break #decoder_inputの中がEOSだったらここで終了
 
 
             
@@ -259,7 +277,7 @@ def Validation(encoder,decoder,lang,dataloader):
                         decoder_input                  = topi.squeeze().detach() # detach from history as input
                     loss_ono += criterion( decoder_output, ono2_tensor[ i ] ) #入力となる音素とデコーダのアウトプットから得られる音素の確率密度を計算
                     topv, topi = decoder_output.data.topk(1)
-                    if decoder_input.item() == EOS_token: break #decoder_inputの中がEOSだったらここで終了
+                    if topi.item() == EOS_token: break #decoder_inputの中がEOSだったらここで終了
 
                 loss=loss_ono
 
@@ -276,42 +294,41 @@ def main():
     embedding_size = 128
     hidden_size   = 128
     num=40 #入出力として使える音素の数=データセット内の.n_wordsに等しい
+    
+
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     encoder           = Encoder( num, embedding_size, hidden_size ).to( device )
     decoder           = Decoder( hidden_size, embedding_size, num ).to( device )
     epochs=10000
-    save_loss=50000
+    save_loss=40
     batch_size=8
-    lang  = Lang( 'dataset/onomatope.csv') #word2indexを作るための辞書
-    dataloader = DataLoader(lang, batch_size=batch_size, shuffle=True,drop_last=True) #drop_lastをtruenにすると最後の中途半端に入っているミニバッチを排除してくれる
-    train_dataset  = Lang( 'dataset/onomatope.csv')
-    valid_dataset  = Lang( 'dataset/onomatopeunknown.csv')
+    augment=True
+    lang  = Lang( 'dataset/onomatope.csv',augment) #word2indexを作るための辞書
+    train_dataset  = Lang( 'dataset/onomatope.csv',augment)
+    valid_dataset  = Lang( 'dataset/onomatopeunknown.csv',augment)
     train_dataloader=DataLoader(train_dataset,batch_size=batch_size, shuffle=True,drop_last=True)
-    valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=True,drop_last=True) #drop_lastをtruenにすると最後の中途半端に入っているミニバッチを排除してくれる
+    valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False,drop_last=True) #drop_lastをtrueにすると最後の中途半端に入っているミニバッチを排除してくれる
 
-    enfile = "model/encoder0704" #学習済みのエンコーダモデル
-    defile = "model/decoder0704" #学習済みのデコーダモデル
-    encoder.load_state_dict( torch.load( enfile ) ) #読み込み
-    decoder.load_state_dict( torch.load( defile ) )
+    # enfile = "model/encoder0704" #学習済みのエンコーダモデル
+    # defile = "model/decoder0704" #学習済みのデコーダモデル
+    # encoder.load_state_dict( torch.load( enfile ) ) #読み込み
+    # decoder.load_state_dict( torch.load( defile ) )
     for epoch in range(epochs):
-        writer=SummaryWriter(log_dir="log/seq2seq07042")
+        writer=SummaryWriter(log_dir="log/seq2seq")
         train_total,encoder,decoder=Train(encoder,decoder,lang,train_dataloader)
         valid_total=Validation(encoder,decoder,lang,valid_dataloader)
         print( "[epoch num %d ] [ train: %f]" % ( epoch+1, train_total ) )
         print( "[epoch num %d ] [ valid: %f]" % ( epoch+1, valid_total ) )
         writer.add_scalars('loss/total',{'train':train_total,'valid':valid_total} ,epoch+1)
-        # writer.add_scalars('loss/ono/',{'train':train_ono} ,epoch+1)
-        # writer.add_scalars('loss/img/',{'train':train_img} ,epoch+1)
-        # writer.add_scalars('loss/imgono/',{'train':train_imgono} ,epoch+1)
-        # writer.add_scalars('loss/total/',{'train':train_total} ,epoch+1)
         writer.close()
-        if (save_loss >= train_total):
-            torch.save(encoder.state_dict(), 'model/encoder07042')
-            torch.save(decoder.state_dict(), 'model/decoder07042')
-            save_loss=train_total
+        if (save_loss >= valid_total):
+            torch.save(encoder.state_dict(), 'model/firstencoder')
+            torch.save(decoder.state_dict(), 'model/firstdecoder')
+            save_loss=valid_total
             print("-------model 更新---------")
-        torch.save(encoder.state_dict(), 'model/encodercheckpoint2')
-        torch.save(decoder.state_dict(), 'model/decodercheckpoint2')
+        torch.save(encoder.state_dict(), 'model/firstencodercheck')
+        torch.save(decoder.state_dict(), 'model/firstdecodercheck')
 if __name__ == '__main__':
     main()
     #追加で書き込み

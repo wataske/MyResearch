@@ -156,9 +156,9 @@ if __name__ == '__main__':
         encoder           = Encoder( num, embedding_size, hidden_size ).to( device )
         decoder           = Decoder( hidden_size, embedding_size, num ).to( device )
         image_model=CAE().to(device)
-        enfile = "model/encodernoaugment" #学習済みのエンコーダモデル
-        defile = "model/decodernoaugment" #学習済みのデコーダモデル
-        imgfile="model/imgmodelnoaugment"
+        enfile = "model/firstencoder" #学習済みのエンコーダモデル
+        defile = "model/firstdecoder" #学習済みのデコーダモデル
+        imgfile="model/imgmodel"
         encoder.load_state_dict( torch.load( enfile ) ) #読み込み
         decoder.load_state_dict( torch.load( defile ) )
         image_model.load_state_dict(torch.load(imgfile))
@@ -166,9 +166,10 @@ if __name__ == '__main__':
         decoder.eval()
         image_model.eval()
         criterion=nn.MSELoss()
-        sentence="a q s a r i"
+        sentence="g o r i g o r i"
         ono_word,encoder_hidden=ono_to_ono(sentence,encoder,decoder)
-        # print(ono_word,"enc")
+        print(ono_word,"enc")
+        sys.exit()
         ono_list=[]
         word_list=[]
         # img_torch=torch.zeros(len(train_dataloader),embedding_size) #imgの埋め込みベクトルのリスト
