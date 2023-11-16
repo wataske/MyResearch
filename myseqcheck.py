@@ -205,9 +205,9 @@ if __name__ == '__main__':
         # enfile = "../../../M1 春セメ/作業用/github/model/encoder0928" #学習済みのエンコーダモデル
         # defile = "../../../M1 春セメ/作業用/github/model/decoder0928" #学習済みのデコーダモデル
         # imgfile="../../../M1 春セメ/作業用/github/model/imgmodel0928"
-        enfile="model/encodercheckcosineseparatecross"
-        defile="model/decodercheckcosineseparatecross"
-        imgfile="model/imgmodelcheckcosineseparatecross"
+        enfile="model/encodercheckcosine copy"
+        defile="model/decodercheckcosine copy"
+        imgfile="model/imgmodelcheckcosine copy"
         encoder.load_state_dict( torch.load( enfile ) ) #読み込み
         decoder.load_state_dict( torch.load( defile ) )
         image_model.load_state_dict(torch.load(imgfile))
@@ -216,9 +216,9 @@ if __name__ == '__main__':
         image_model.eval()
         criterion=nn.MSELoss()
         cos=nn.CosineEmbeddingLoss()
-        sentence="a m i a m i"
+        sentence="w a k u w a k u"
         ono_word,encoder_hidden=ono_to_ono(sentence,encoder,decoder,lang)
-
+        print(ono_word)
         ono_list=[]
         word_list=[]
         hist_list=[]
@@ -272,8 +272,8 @@ if __name__ == '__main__':
             generate_and_save_images(img,batch_num,0,ono) #オリジナルの画像
             generate_and_save_images(output_batch,batch_num,1,ono) #画像特徴から画像
             generate_and_save_images(ono_output_batch,batch_num,2,phoneme) #オノマトペの音素から画像
-            print(criterion(img,ono_output_batch))
-            sys.exit()
+            # print(criterion(img,ono_output_batch))
+            # sys.exit()
             img_batch_numpy[batch_num]=img_numpy
             ono_batch_numpy[batch_num]=ono_numpy
         # print(calc_ono2ono_accu(encoder,decoder,dataloader,lang))
