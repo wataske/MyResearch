@@ -37,24 +37,7 @@ class Reshape(nn.Module):
         self.shape = args
     def forward(self,x):
         return x.view(self.shape)
-    
-# # VGG16から特徴を抽出
-# class VGGIntermediate(nn.Module):
-#     def __init__(self, requested=[]):
-#         super(VGGIntermediate, self).__init__()
-#         self.intermediates = {}
-#         self.vgg = models.vgg16(pretrained=True).features
-#         for name, module in self.vgg.named_children():
-#             if name in requested:
-#                 def curry(i):
-#                     def hook(module, input, output):
-#                         self.intermediates[i] = output
-#                     return hook
-#                 module.register_forward_hook(curry(name))
 
-#     def forward(self, x):
-#         self.vgg(x)
-#         return self.intermediates
 class VGGFeatures(nn.Module):
     def __init__(self):
         super(VGGFeatures, self).__init__()

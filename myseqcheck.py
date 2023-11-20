@@ -38,7 +38,6 @@ import matplotlib.collections as mc
 # from segnet import ConvAutoencoder
 # from vgg16autoencoder import VGG16Autoencoder
 # from aegan import AE_GAN
-from cae import CAE
 
 from myseq import ImageLang
 from seq2seq import Encoder
@@ -71,23 +70,41 @@ def levenshtein_distance(s1, s2):
 def is_close_match(s1, s2, tolerance=2):
     return levenshtein_distance(s1, s2) <= tolerance
 
-def calc_ono2ono_accu(encoder,decoder,dataloader,lang):
+# def calc_ono2ono_accu(encoder,decoder,dataloader,lang):
+#     score=0
+#     for batch_num,(img,img_path,ono,phoneme) in enumerate(dataloader):  
+#         for data_num in range(dataloader.batch_size):           
+#             ono_word,encoder_hidden=ono_to_ono(phoneme[data_num],encoder,decoder,lang)
+            
+#             word=[x.replace("<EOS>","") for x in ono_word]
+#             word=[x+' 'for x in word] #1音素ずつに半角の空白を追加
+#             word[-1]=word[-1].strip() #最後の音素の後ろの空白だけ消す
+#             word=''.join(word) #リストになってたものを１つの単語にする
+
+#             if is_close_match(phoneme[data_num],word):
+#                 score+=1
+#     return (score/len(dataloader.dataset))
+def calc_accu(encoder,decoder,dataloader,lang):
     score=0
-    for batch_num,(img,img_path,ono,phoneme) in enumerate(dataloader):  
+    count=0
+    for batch_num,(ono,phoneme) in enumerate(dataloader):  
         for data_num in range(dataloader.batch_size):           
             ono_word,encoder_hidden=ono_to_ono(phoneme[data_num],encoder,decoder,lang)
-            
+
             word=[x.replace("<EOS>","") for x in ono_word]
             word=[x+' 'for x in word] #1音素ずつに半角の空白を追加
             word[-1]=word[-1].strip() #最後の音素の後ろの空白だけ消す
             word=''.join(word) #リストになってたものを１つの単語にする
-
+ 
             if is_close_match(phoneme[data_num],word):
                 score+=1
-    return (score/len(dataloader.dataset))
+
+            count+=1
+    return (score/count)
 
 def calc_img2ono_accu(image_model,decoder,dataloader,lang):
     score=0
+    count=0
     for batch_num,(img,_,_,phoneme) in enumerate(dataloader):  
         for data_num in range(dataloader.batch_size):           
             img_word,_=img_to_ono(img[data_num],image_model,decoder,lang)
@@ -99,7 +116,8 @@ def calc_img2ono_accu(image_model,decoder,dataloader,lang):
 
             if is_close_match(phoneme[data_num],word):
                 score+=1
-    return (score/len(dataloader.dataset))
+            count+=1
+    return (score/count)
 def img_to_ono(img,image_model,decoder,lang):
     img_input=img.view(-1,3,size,size).to(device)
     output,img_hidden=image_model(img_input)   
@@ -144,20 +162,18 @@ def ono_to_ono(sentence,encoder,decoder,lang):
 
         decoder_input = topi.squeeze().detach()
     return decoded_words,encoder_hidden
-def generate_and_save_image(pic, epoch,num,label):
+def generate_ono_image(pic, epoch,label):
     fig = plt.figure(figsize=(4, 4))
-    for i in range(1):
-        plt.subplot(1, 1, i + 1)
-        print(pic.shape,"picdesu")
-        plt.imshow(pic.cpu().data[i, :, :, :].permute(1, 2, 0))
-        name=os.path.basename(label[i])
-        name,_=os.path.splitext(name)
-        plt.title(name)
-        plt.axis('off')
-    if num == 0:
-        plt.savefig("/workspace/mycode/Documents/output/single/onomatope{}.jpg".format(epoch))
-    else:
-        plt.savefig('/workspace/mycode/Documents/output/single/image{}.png'.format(epoch))
+
+    plt.subplot(1, 1, 1)
+    print(pic.shape,"picdesu")
+    plt.imshow(pic.cpu().data[:, :, :].permute(1, 2, 0))
+    name=os.path.basename(label)
+    name,_=os.path.splitext(name)
+    plt.title(name)
+    plt.axis('off')
+    plt.savefig("/workspace/mycode/Documents/output/batch/{}.jpg".format(label))
+
 
 def generate_and_save_images(pic, epoch,num,label):
     fig = plt.figure(figsize=(4, 4))
@@ -174,6 +190,40 @@ def generate_and_save_images(pic, epoch,num,label):
     else:
         plt.savefig('/workspace/mycode/Documents/output/batch/onomatope{}.png'.format(epoch))
 
+def generate_bar_graph(dictionary):
+    graph_dict={}
+    
+    for label,values in dictionary.items():
+        total=sum(values)
+        count=len(values)
+        graph_dict[label]=total/count
+    
+    graph_dict = dict(sorted(graph_dict.items(), key=lambda item: item[1], reverse=True))
+    # 辞書からラベルと値を取り出す
+
+    labels = list(graph_dict.keys())
+    values = list(graph_dict.values())
+
+    # 棒グラフの生成
+    plt.figure(figsize=(15,5))
+    bars=plt.bar(labels, values)
+    # 各棒の上に値を表示
+    for bar in bars:
+        print(bar)
+        yval = bar.get_height()
+        print(yval)
+        plt.text(bar.get_x() + bar.get_width()/2.0, yval, '{:.2f}'.format(yval), va='bottom', ha='center')
+    # グラフのタイトルと軸ラベルの追加
+    plt.title('Cosine Similarity')
+    plt.xlabel('onomatope')
+    plt.xticks(rotation=30,fontsize=10)
+    plt.ylabel('cosine')
+    plt.ylim(0,1)
+    plt.savefig("figure/cosine_bar_graph.jpg")
+    # グラフの表示
+    plt.show()
+
+
 if __name__ == '__main__':
     with torch.no_grad():
         SOS_token = 0
@@ -185,29 +235,28 @@ if __name__ == '__main__':
         hidden_size   = 128
         max_length=20
         size=64
-        
+        cosine_dict={}
         #データセットの準備
         transform = transforms.Compose([transforms.Resize((size, size)), transforms.ToTensor()])
-        # transform = transforms.Compose([transforms.Resize((size, size)),
-        # transforms.RandomResizedCrop(size),
-        # transforms.RandomHorizontalFlip(),
-        # transforms.ToTensor()])
-        lang=Lang('dataset/dictionary.csv')
-        train_lang  = ImageLang( 'dataset/onomatope.csv',"dataset/image/train",transform)
-        valid_lang  = ImageLang( 'dataset/onomatope.csv',"dataset/image/valid",transform)
+  
+        lang=Lang('dataset/onomatope/dictionary.csv')
+        train_lang  = ImageLang( 'dataset/imageono/onomatope/train/train_image_onomatope.csv',"dataset/imageono/image/train",transform)
+        valid_lang  = ImageLang( 'dataset/imageono/onomatope/train/train_image_onomatope.csv',"dataset/imageono/image/valid",transform)
         
         train_dataloader = DataLoader(train_lang, batch_size=batch_size, shuffle=False,drop_last=True) #drop_lastをtruenにすると最後の中途半端に入っているミニバッチを排除してくれる
         valid_dataloader=DataLoader(valid_lang,batch_size=batch_size, shuffle=False,drop_last=True)
+
+        ono_train_dataloader=DataLoader(lang,batch_size=batch_size,shuffle=False,drop_last=True)    
+        ono_valid_dataset=Lang('dataset/onomatope/onomatopeunknown.csv')
+        ono_valid_dataloader=DataLoader(ono_valid_dataset,batch_size=batch_size,shuffle=False,drop_last=True)    
         #モデルの準備
         encoder           = Encoder( num, embedding_size, hidden_size ).to( device )
         decoder           = Decoder( hidden_size, embedding_size, num ).to( device )
         image_model=TextureNet(feature_layers=["0", "5", "10"]).to(device)
-        # enfile = "../../../M1 春セメ/作業用/github/model/encoder0928" #学習済みのエンコーダモデル
-        # defile = "../../../M1 春セメ/作業用/github/model/decoder0928" #学習済みのデコーダモデル
-        # imgfile="../../../M1 春セメ/作業用/github/model/imgmodel0928"
-        enfile="model/encodercheckcosine copy"
-        defile="model/decodercheckcosine copy"
-        imgfile="model/imgmodelcheckcosine copy"
+
+        enfile="model/encodercosine2"
+        defile="model/decodercosine2"
+        imgfile="model/imgmodelcosine2"
         encoder.load_state_dict( torch.load( enfile ) ) #読み込み
         decoder.load_state_dict( torch.load( defile ) )
         image_model.load_state_dict(torch.load(imgfile))
@@ -216,14 +265,12 @@ if __name__ == '__main__':
         image_model.eval()
         criterion=nn.MSELoss()
         cos=nn.CosineEmbeddingLoss()
-        sentence="w a k u w a k u"
+        cos2=nn.CosineSimilarity()
+        sentence="p u r i p u r i"
         ono_word,encoder_hidden=ono_to_ono(sentence,encoder,decoder,lang)
-        print(ono_word)
-        ono_list=[]
+
         word_list=[]
-        hist_list=[]
-        # img_torch=torch.zeros(len(train_dataloader),embedding_size) #imgの埋め込みベクトルのリスト
-        # ono_torch=torch.zeros(len(train_dataloader),embedding_size) #onomatopeの埋め込みベクトルのリスト
+
         
         dataloader=train_dataloader
         img_batch_numpy=np.zeros((len(dataloader),dataloader.batch_size,128))
@@ -232,28 +279,33 @@ if __name__ == '__main__':
         img_hidden_list=[]
         for batch_num,(img,path,ono,phoneme) in tqdm.tqdm(enumerate(dataloader),total=len(dataloader)): #プログレスバーあり
         # for batch_num,(img,path,ono,phoneme) in enumerate(dataloader):
-            img=img.to(device)
-            output_batch,_=image_model(img)
-            
-            # sys.exit()
             img_numpy=np.zeros((0,128))
             ono_numpy=np.zeros((0,128))    
+            img_list=[]
+            ono_list=[]
+            img_output_batch=torch.zeros(dataloader.batch_size,3,size,size)
+            ono_output_batch=torch.zeros(dataloader.batch_size,3,size,size)
             for data_num in range(dataloader.batch_size):      
-                add_hidden=[]     
+                add_hidden=[]
+
+                img_data=img[data_num].to(device)
+                img_data=img_data.unsqueeze(0)
+                output_batch,_=image_model(img_data)
+                img_list.append(output_batch)     
+
                 img_word,img_hidden=img_to_ono(img[data_num],image_model,decoder,lang) #画像の隠れベクトルからオノマトペを生成
                 ono_word,encoder_hidden=ono_to_ono(phoneme[data_num],encoder,decoder,lang)
-
                 add_hidden.append(img_hidden)
                 img_hidden_list.append(img_hidden)
                 encoder_hidden=encoder_hidden.squeeze(1)
                 img_hidden=img_hidden.squeeze(1)
-                # print(encoder_hidden)
-                # print(img_hidden)
-                cos2=nn.CosineSimilarity()
-                hist_list.append(cos2(encoder_hidden,img_hidden))
-                loss=cos(encoder_hidden,img_hidden,torch.tensor([1.0]).to(device))
+                
 
-                print(loss) #Lossの表示
+
+                #-------------------------------------------- cosine類似度を計算
+                loss=cos(encoder_hidden,img_hidden,torch.tensor([1.0]).to(device))
+                similar=cos2(encoder_hidden,img_hidden)
+                #---------------------------------------
                 encoder_hidden=encoder_hidden.view(-1,128) #オノマトペの特徴ベクトルを画像の隠れベクトルのサイズに合わせる
 
                 ono_output=image_model.decoder(encoder_hidden) #画像のデコーダにオノマトペの特徴ベクトルを渡す
@@ -264,25 +316,30 @@ if __name__ == '__main__':
 
                 img_numpy=np.concatenate((img_numpy,img_hidden),axis=0)
                 ono_numpy=np.concatenate((ono_numpy,ono_hidden),axis=0)
-
+                print(similar.item(),"↓のコサイン類似度")
                 print(img_word,ono[data_num],ono_word,phoneme[data_num]) #画像特徴からオノマトペの音素とオノマトペの音素からオノマトペの音素の結果を表示
-            
+
+                #--------------------------------------
+                if ono[data_num] not in cosine_dict:
+                    cosine_dict[ono[data_num]]=[]
+                    generate_ono_image(ono_output[0],batch_num,phoneme[data_num])#オノマトペの音素から画像
+                cosine_dict[ono[data_num]].append(similar.item())
+                #-------------------------------------------
+            img_output_batch=torch.cat(img_list,dim=0)
             ono_output_batch=torch.cat(ono_list,dim=0) #エンコーダの隠れベクトルをバッチサイズ分の大きさにする
 
-            generate_and_save_images(img,batch_num,0,ono) #オリジナルの画像
-            generate_and_save_images(output_batch,batch_num,1,ono) #画像特徴から画像
-            generate_and_save_images(ono_output_batch,batch_num,2,phoneme) #オノマトペの音素から画像
-            # print(criterion(img,ono_output_batch))
-            # sys.exit()
+            # generate_and_save_images(img,batch_num,0,ono) #オリジナルの画像
+            # generate_and_save_images(img_output_batch,batch_num,1,ono) #画像特徴から画像
+
+    
             img_batch_numpy[batch_num]=img_numpy
             ono_batch_numpy[batch_num]=ono_numpy
-        # print(calc_ono2ono_accu(encoder,decoder,dataloader,lang))
+
+
+        # generate_bar_graph(cosine_dict)
+
+        # print(calc_accu(encoder,decoder,ono_valid_dataloader,lang))
         # print(calc_img2ono_accu(image_model,decoder,dataloader,lang))
-        # img1=img_hidden_list[0]
-        # img1=torch.tensor(img1)
-        # img2=img_hidden_list[400]
-        # img2=torch.tensor(img2)
-        # loss=criterion(img1,img2) 
         
 
 
@@ -294,48 +351,26 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from sklearn.manifold import MDS
     from sklearn.metrics import pairwise_distances
-    fig=plt.figure()
-    numpy_arrays = [tensor.cpu().numpy() for tensor in hist_list]
 
-    plt.hist(numpy_arrays,edgecolor='black',linewidth=1.5)
-    plt.title('principal component')
-    plt.xlabel('pc1')
-    plt.ylabel('pc2')
-    fig.savefig("figure/cosine_histgram2.png")
-    plt.show()
-    sys.exit()
     scaler=StandardScaler()
-    # sys.exit()
 
     
     img_batch_numpy=img_batch_numpy.reshape(-1,128)
     ono_batch_numpy=ono_batch_numpy.reshape(-1,128)
-    print(len(img_batch_numpy))
-    print(len(ono_batch_numpy))
+
     combined_numpy = np.concatenate((img_batch_numpy, ono_batch_numpy), axis=0)
-    # dfimg=pd.DataFrame(img_batch_numpy)
-    # dfono=pd.DataFrame(ono_batch_numpy)
-    # print(dfimg.describe(),"img")
-    # print(dfono.describe(),"ono")
-    # img_batch_numpy=scaler.fit_transform(img_batch_numpy)
-    # ono_batch_numpy=scaler.fit_transform(ono_batch_numpy)
-    # dissimilarities_img = pairwise_distances(img_batch_numpy)
-    # dissimilarities_ono = pairwise_distances(ono_batch_numpy)
 
     pca=PCA()
-    # print(len(combined_numpy))
-    p1 = pca.fit(img_batch_numpy)
-    p2 = pca.fit(ono_batch_numpy)
-    p3=pca.fit(combined_numpy)
+    img_pca = pca.fit(img_batch_numpy)
+    ono_pca = pca.fit(ono_batch_numpy)
+    imgono_pca=pca.fit(combined_numpy)
     # 分析結果を元にデータセットを主成分に変換する
 
-    mds = MDS(n_components=2, metric=False, dissimilarity='precomputed', random_state=42)
 
-    # projected_img = mds.fit_transform(dissimilarities_img)
-    # projected_ono = mds.fit_transform(dissimilarities_ono)
-    transformed1 = p1.fit_transform(img_batch_numpy)
-    transformed2 = p2.fit_transform(ono_batch_numpy)
-    transformed3=p3.fit_transform(combined_numpy)
+
+    transformed1 = img_pca.fit_transform(img_batch_numpy)
+    transformed2 = ono_pca.fit_transform(ono_batch_numpy)
+    transformed3=imgono_pca.fit_transform(combined_numpy)
     eigenvalues_combined = pca.explained_variance_
 
     # 固有値を出力
@@ -354,95 +389,14 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax=fig.add_subplot(aspect='1')
 
-
-    img_norm=0
-    phoneme_norm=0
-    for i in range(len(transformed1)):
-        tensor1=torch.tensor(transformed1[i],dtype=torch.float32)
-        # print(tensor1)
-        # print(img_batch_numpy[i])
-        img_norm +=torch.norm(tensor1)
-        # print(transformed1[i])
-
-
-   
-        tensor2=torch.tensor(transformed2[i],dtype=torch.float32)
-        # print(tensor2)
-        # print(ono_batch_numpy[i])
-        phoneme_norm +=torch.norm(tensor2)
-        # print(transformed2[i])
-        # MSELossを使用して二つのテンソル間の損失を計算
-        criterion = torch.nn.MSELoss()
-        loss = criterion(tensor1, tensor2)
-
-        # print(loss.item())
-    # print(img_norm/len(transformed1))
-    # print(phoneme_norm/len(transformed2))
-    #     lines=[[(transformed1[i,0],transformed1[i,1]),(transformed2[i,0],transformed2[i,1])]for i in range(200)] 
-    #     linedistance=math.sqrt((transformed2[i,0]-transformed1[i,0])**2+(transformed2[i,1]-transformed1[i,1])**2)
-    #     plt.text(transformed1[i, 0], transformed1[i, 1], word_list[i], fontsize=4)
-    #     plt.text(transformed2[i, 0], transformed2[i, 1], word_list[i], fontsize=4)
-
-    #     print(linedistance,"line",word_list[i])
-    # lc=mc.LineCollection(lines,colors="k",linewidths=0.5)
     print(len(transformed3))
-    plt.scatter(transformed3[:1392, 0], transformed3[:1392, 1],c="red")#画像
-    plt.scatter(transformed3[1392:, 0], transformed3[1392:, 1],c="blue",marker="$x$")#オノマトペ
-    # ax.add_collection(lc)
-
+    num=int(len(transformed3)/2)
+    plt.scatter(transformed3[:num, 0], transformed3[:num, 1],c="red")#画像
+    plt.scatter(transformed3[num:, 0], transformed3[num:, 1],c="blue",marker="$x$")#オノマトペ
+    for i in range(int(len(transformed3)/2)): #ラベルをプロットしていく
+        plt.text(transformed3[i+int(len(transformed3)/2), 0], transformed3[i+int(len(transformed3)/2), 1],word_list[i],fontsize=8)
     plt.title('principal component')
     plt.xlabel('pc1')
     plt.ylabel('pc2')
     fig.savefig("figure/PCA.png")
     plt.show()
-
-    # fig = plt.figure()
-    # ax=fig.add_subplot(aspect='1')
-
-    # print(len(word_list))
-    # print(transformed1[0])
-    # print(len(transformed2))
-
-    # for i in range(len(transformed1)):
-    #     lines=[[(transformed1[i,0],transformed1[i,1]),(transformed2[i,0],transformed2[i,1])]for i in range(200)] 
-    #     linedistance=math.sqrt((transformed2[i,0]-transformed1[i,0])**2+(transformed2[i,1]-transformed1[i,1])**2)
-    #     plt.text(transformed1[i, 0], transformed1[i, 1], word_list[i], fontsize=4)
-    #     plt.text(transformed2[i, 0], transformed2[i, 1], word_list[i], fontsize=4)
-
-    #     print(linedistance,"line")
-    # lc=mc.LineCollection(lines,colors="k",linewidths=0.5)
-    # plt.axis([-0.5,0.5,-0.5,0.5])
-    # plt.scatter(transformed1[:len(transformed1), 0], transformed1[:len(transformed1), 1],c="red")#画像
-    # plt.scatter(transformed2[:len(transformed2), 0], transformed2[:len(transformed2), 1],c="blue",marker="$x$")#オノマトペ
-    # plt.scatter(transformed1[:, 0], transformed1[:, 1],c="red")#画像
-    # plt.scatter(transformed2[:, 0], transformed2[:, 1],c="blue",marker="$x$")#オノマトペ
-    # ax.add_collection(lc)
-
-    plt.title('principal component')
-    plt.xlabel('pc1')
-    plt.ylabel('pc2')
-    fig.savefig("figure/PCA.png")
-    plt.show()
-
-    # fig = plt.figure()
-    # ax=fig.add_subplot(aspect='1')
-    # for i in range(200):
-    #     lines=[[(projected_img[i,0],projected_img[i,1]),(projected_ono[i,0],projected_ono[i,1])]for i in range(200)] 
-    #     linedistance=math.sqrt((projected_ono[i,0]-projected_img[i,0])**2+(projected_ono[i,1]-projected_img[i,1])**2)
-    #     plt.text(projected_img[i, 0], projected_img[i, 1], word_list[i], fontsize=4)
-    #     plt.text(projected_ono[i, 0], projected_ono[i, 1], word_list[i], fontsize=4)
-
-    #     print(linedistance,"line")
-    # lc=mc.LineCollection(lines,colors="k",linewidths=0.5)
-
-
-    # plt.scatter(projected_img[:200, 0], projected_img[:200, 1],c="red")#画像
-    # plt.scatter(projected_ono[:200, 0], projected_ono[:200, 1],c="blue",marker="$x$")#オノマトペ
-    # ax.add_collection(lc)
-
-
-    # plt.title('principal component')
-    # plt.xlabel('pc1')
-    # plt.ylabel('pc2')
-    # fig.savefig("figure/MDS.png")
-    # plt.show()

@@ -37,7 +37,8 @@ class ImageLang:
         self.transform = transform
         max_length    = 20
         self.filename = filename
-        self.data = [] #画像が入ってる
+        self.data = [] #画像のパスが入ってる
+        self.img=[] #画像が入ってる
         self.labels = [] #画像のラベルを入れてる
         self.ono=[]    
         self.word2index = {}
@@ -83,6 +84,9 @@ class ImageLang:
             for data in glob.glob(os.path.join(path,"*")):
                 self.labels.append(label) 
                 self.data.append(data)
+                img = Image.open(data).convert("RGB") #img_pathの画像を開く
+                img = self.transform(img) #transformする
+                self.img.append(img)
         #----------------------------------------------------------------
         allow_list  = self.get_allow_list( max_length )#maxlength以下の長さの音素数をallowlistに入れる（長すぎる音素は省かれる)
         self.load_file(allow_list)#max以下の長さである単語を引数に渡す（今回の場合は264こ）
@@ -149,9 +153,7 @@ class ImageLang:
         
         phoneme = self.sentences[img_label] #同上
     
-        
-        img = Image.open(img_path).convert("RGB") #img_pathの画像を開く
-        img = self.transform(img) #transformする
+        img=self.img[index]
         return img, img_path, ono, phoneme       
 
 def Train(encoder,decoder,image_model,lang,imageono_dataloader,ono_dataloader):
@@ -169,7 +171,7 @@ def Train(encoder,decoder,image_model,lang,imageono_dataloader,ono_dataloader):
     train_ono2img_loss=0
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    learning_rate = 1e-6 #10e-6→10e-8
+    learning_rate = 1e-4 #10e-6→10e-8
 
     image_weight=1#画像のLossにかける重み 1
     imgono_weight=1e-3 #2つの値を近づける重みe-3
@@ -259,7 +261,7 @@ def Train(encoder,decoder,image_model,lang,imageono_dataloader,ono_dataloader):
                 loss_ONO = 0 #seq2seqのloss
                 decoder_input  = torch.tensor( [ [ SOS_token ] ] ).to( device )
                 decoder_hidden = ENCODER_hidden
-                for i in range( input_length ):
+                for i in range( INPUT_length ):
                     decoder_output, decoder_hidden = decoder( decoder_input, decoder_hidden ) 
                         
                     decoder_input = PHONEME2_tensor[ i ] #次の音素（インデックス）をセットしておく
@@ -392,6 +394,7 @@ def Validation(encoder,decoder,image_model,lang,imageono_dataloader,ono_dataload
                     loss_img=loss_img *image_weight
         #----------------------------------------------------------　音素復元
                     PHONEME2_tensor=tensorFromSentence(lang,PHONEME[j]).to(device)
+            
                     ENCODER_hidden=encoder.initHidden()
 
                     INPUT_length  = PHONEME2_tensor.size(0)  
@@ -402,7 +405,7 @@ def Validation(encoder,decoder,image_model,lang,imageono_dataloader,ono_dataload
                     loss_ONO = 0 #seq2seqのloss
                     decoder_input  = torch.tensor( [ [ SOS_token ] ] ).to( device )
                     decoder_hidden = ENCODER_hidden
-                    for i in range( input_length ):
+                    for i in range( INPUT_length ):
                         decoder_output, decoder_hidden = decoder( decoder_input, decoder_hidden ) 
                             
                         decoder_input = PHONEME2_tensor[ i ] #次の音素（インデックス）をセットしておく
@@ -452,7 +455,7 @@ def main():
     num=40 #入出力として使える音素の数=データセット内の.n_wordsに等しい
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     image_model=TextureNet(feature_layers=["0", "5", "10"]).to(device)
-    stdict_img = "model/texture_net64.pth"
+    stdict_img = "model/imgmodelcheckcosine"
     image_model.load_state_dict(torch.load(stdict_img))
     encoder           = Encoder( num, embedding_size, hidden_size ).to( device )
     decoder           = Decoder( hidden_size, embedding_size, num ).to( device )
@@ -461,24 +464,24 @@ def main():
     size=64
     batch_size=16
     augment=True
-    enfile = "model/firstencoder" #学習済みのエンコーダモデル
-    defile = "model/firstdecoder" #学習済みのデコーダモデル
+    enfile = "model/encodercheckcosine" #学習済みのエンコーダモデル
+    defile = "model/decodercheckcosine" #学習済みのデコーダモデル
     encoder.load_state_dict( torch.load( enfile ) ) #読み込み
     decoder.load_state_dict( torch.load( defile ) )
     transform = transforms.Compose([transforms.Resize((size, size)),transforms.ToTensor()])
 
-    lang  = Lang( 'dataset/dictionary.csv')
+    lang  = Lang( 'dataset/onomatope/dictionary.csv')
 
 
-    imageono_train_dataset=ImageLang('dataset/onomatope.csv',"dataset/image/train",transform)
+    imageono_train_dataset=ImageLang('dataset/imageono/onomatope/train/train_image_onomatope.csv',"dataset/imageono/image/train",transform)
     imageono_train_dataloader = DataLoader(imageono_train_dataset, batch_size=batch_size, shuffle=True,drop_last=True) #drop_lastをtruenにすると最後の中途半端に入っているミニバッチを排除してくれる
-    imageono_valid_dataset=ImageLang('dataset/onomatope.csv',"dataset/image/valid",transform)
+    imageono_valid_dataset=ImageLang('dataset/imageono/onomatope/train/train_image_onomatope.csv',"dataset/imageono/image/valid",transform)
     imageono_valid_dataloader=DataLoader(imageono_valid_dataset, batch_size=batch_size, shuffle=False,drop_last=True)
 
     
-    ono_train_dataset  = Lang( 'dataset/dictionary.csv',augment)
+    ono_train_dataset  = Lang( 'dataset/onomatope/dictionary.csv',augment)
     ono_train_dataloader=DataLoader(ono_train_dataset,batch_size=batch_size, shuffle=True,drop_last=True)
-    ono_valid_dataset=Lang('dataset/onomatopeunknown.csv')
+    ono_valid_dataset=Lang('dataset/onomatope/onomatopeunknown.csv')
     ono_valid_dataloader=DataLoader(ono_valid_dataset,batch_size=batch_size,shuffle=False,drop_last=True)    
 
 

@@ -380,9 +380,8 @@ def main():
     save_loss=40
     batch_size=4
     augment=True
-    lang  = Lang( 'dataset/dictionary.csv',augment) #word2indexを作るための辞書
-    train_dataset  = Lang( 'dataset/onomatope.csv',augment)
-    valid_dataset  = Lang( 'dataset/onomatopeunknown.csv',augment)
+    lang  = Lang( 'dataset/onomatope/dictionary.csv',augment) #word2indexを作るための辞書
+    valid_dataset  = Lang( 'dataset/onomatope/onomatopeunknown.csv',augment)
     train_dataloader=DataLoader(lang,batch_size=batch_size, shuffle=True,drop_last=True)
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False,drop_last=True) #drop_lastをtrueにすると最後の中途半端に入っているミニバッチを排除してくれる
 
