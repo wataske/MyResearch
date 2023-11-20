@@ -5,9 +5,9 @@
 
 
 ## 要件
-Python3.10.9
+- Python3.10.9
 
-Pytorch2.0
+- Pytorch2.0
 
 具体的なライブラリ等は`requirenments.txt` を参照
 
