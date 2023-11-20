@@ -129,7 +129,7 @@ class ImageDataset:
     def __init__( self,dir,transform ): #呼び出されたとき、最初に行うこと
         self.transform = transform
         self.data = [] #画像が入ってる
-        target_dir = os.path.join(dir, "*")
+        target_dir = os.path.join(dir, "*/*")
         for path in glob.glob(target_dir):
             self.data.append(path) 
     def __len__(self):
@@ -142,7 +142,6 @@ class ImageDataset:
         img_path = self.data[index] #適当な画像を取ってくる
         img = Image.open(img_path).convert("RGB") #img_pathの画像を開く
         img = self.transform(img) #transformする
-
         return img, img_path
 def main():
     #dataset作成

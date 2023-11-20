@@ -1,8 +1,12 @@
-/log/
-/model/
 /__pycache__/
-/output/
 /dataset/
 /figure/
-/data/
+/log/
+/model/
+/output/
+/runs/
+debug.py
+cae.py
+style.py
+stylecheck.py
 

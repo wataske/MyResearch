@@ -29,10 +29,7 @@ import math
 import matplotlib.collections as mc
 
 
-from seq2seq import Lang
-from seq2seq import Encoder
-from seq2seq import Decoder
-from seq2seq import tensorFromSentence
+from seq2seq import Lang,Encoder,Decoder,tensorFromSentence
 
 
 def levenshtein_distance(s1, s2):
@@ -59,23 +56,25 @@ def levenshtein_distance(s1, s2):
 def is_close_match(s1, s2, tolerance=2):
     return levenshtein_distance(s1, s2) <= tolerance
 
-def calc_accu(encoder,decoder,dataloader):
+def calc_accu(encoder,decoder,dataloader,lang):
     score=0
     for batch_num,(ono,phoneme) in enumerate(dataloader):  
         for data_num in range(dataloader.batch_size):           
-            ono_word,encoder_hidden=ono_to_ono(phoneme[data_num],encoder,decoder)
-            
+            ono_word,encoder_hidden=ono_to_ono(phoneme[data_num],encoder,decoder,lang)
+            print(ono_word,phoneme[data_num])
             word=[x.replace("<EOS>","") for x in ono_word]
             word=[x+' 'for x in word] #1音素ずつに半角の空白を追加
             word[-1]=word[-1].strip() #最後の音素の後ろの空白だけ消す
             word=''.join(word) #リストになってたものを１つの単語にする
-
+            print(word)
             if is_close_match(phoneme[data_num],word):
                 score+=1
+            print(score,len(dataloader.dataset))
     return (score/len(dataloader.dataset))
 
-def ono_to_ono(sentence,encoder,decoder):
-    
+def ono_to_ono(sentence,encoder,decoder,lang):
+    SOS_token = 0
+    EOS_token = 1    
     input_tensor   = tensorFromSentence(lang, sentence)
     input_length   = input_tensor.size()[0]
     encoder_hidden = encoder.initHidden()
@@ -114,8 +113,9 @@ if __name__ == '__main__':
         
         #データセットの準備
         transform = transforms.Compose([transforms.Resize((size, size)), transforms.ToTensor()])
-        lang  = Lang( 'dataset/onomatope.csv')
-        valid_lang  = Lang( 'dataset/onomatopeunknown.csv')
+        lang  = Lang( 'dataset/onomatope/dictionary.csv')
+        # train_lang  = Lang( 'dataset/onomatope/onomatope.csv')
+        valid_lang  = Lang( 'dataset/onomatope/onomatopeunknown.csv')
 
         train_dataloader = DataLoader(lang, batch_size=batch_size, shuffle=False,drop_last=True) #drop_lastをtruenにすると最後の中途半端に入っているミニバッチを排除してくれる
         valid_dataloader=DataLoader(valid_lang,batch_size=batch_size, shuffle=False,drop_last=True)
@@ -123,16 +123,16 @@ if __name__ == '__main__':
         #モデルの準備
         encoder           = Encoder( num, embedding_size, hidden_size ).to( device )
         decoder           = Decoder( hidden_size, embedding_size, num ).to( device )
-        enfile = "model/firstencoder" #学習済みのエンコーダモデル
-        defile = "model/firstdecoder" #学習済みのデコーダモデル
+        enfile = "model/firstmodel/firstencoder" #学習済みのエンコーダモデル
+        defile = "model/firstmodel/firstdecoder" #学習済みのデコーダモデル
 
         encoder.load_state_dict( torch.load( enfile ) ) #読み込み
         decoder.load_state_dict( torch.load( defile ) )
         encoder.eval()
         decoder.eval()
         dataloader=valid_dataloader
-        sentence="t a q p u r i"
+        sentence="h o q k o r i"
 
-        ono_word,_=ono_to_ono(sentence,encoder,decoder)
+        ono_word,_=ono_to_ono(sentence,encoder,decoder,lang)
         print(ono_word)
-        print(calc_accu(encoder,decoder,dataloader))
+        print(calc_accu(encoder,decoder,dataloader,lang))
